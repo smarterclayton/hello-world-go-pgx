@@ -1,18 +1,25 @@
-This repo contains the source code for a simple Hello World application, written in Go. The app uses the [pgx driver](https://pkg.go.dev/github.com/jackc/pgx) to connect to an existing [CockroachDB](https://www.cockroachlabs.com/docs/stable/) cluster.
+Reproducing test results
 
-To run the code:
+Start a cockroachdb instance (22.1 alpha / recent)
 
-1. Start a [local CockroachDB cluster](https://www.cockroachlabs.com/docs/stable/secure-a-cluster.html), or use [CockroachCloud](https://www.cockroachlabs.com/docs/cockroachcloud/create-a-free-cluster.html).
-2. From the command line, execute the following:
+    ./cockroach start-single-node --insecure
 
+Open a SQL shell to run the following setup:
+
+    ./cockroach sql --insecure
     
-    ~~~
-    go mod init basic-sample && go mod tidy
-    ~~~
+    SET CLUSTER SETTING changefeed.experimental_poll_interval = '0.2s';
 
-    ~~~
-    go run main.go
-    ~~~
+    CREATE TABLE public.foo (
+        a INT8 NOT NULL,
+        value STRING NULL,
+        i INT8 NULL,
+        CONSTRAINT foo_pkey PRIMARY KEY (a ASC),
+        FAMILY "primary" (a, value, i)
+    )
 
-3. Enter the connection string for the cluster.
+To start the run, from this directory launch
 
+    go run . -q -qps=-1 -for=1m -writers=96 -extra-watchers=0
+
+which runs as fast as possible with 96 writers, 96 readers, and no extra readers for one minute.
